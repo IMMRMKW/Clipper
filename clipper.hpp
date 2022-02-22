@@ -36,6 +36,10 @@
 
 #define CLIPPER_VERSION "6.4.2"
 
+//no_Exceptions: When enabled, all the exceptions will not be used. This is handy
+//for platforms that do not support them
+#define no_Exceptions
+
 //use_int32: When enabled 32bit ints are used instead of 64bit ints. This
 //improve performance but coordinate values are limited to the range +/- 46340
 //#define use_int32

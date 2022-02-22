@@ -38,7 +38,7 @@
 *                                                                              *
 *******************************************************************************/
 
-#include "cpp/clipper.hpp"
+#include "clipper.hpp"
 #include <cmath>
 #include <vector>
 #include <algorithm>
@@ -59,8 +59,8 @@ enum Direction { dRightToLeft, dLeftToRight };
 static int const Unassigned = -1;  //edge not currently 'owning' a solution
 static int const Skip = -2;        //edge that would otherwise close a path
 
-#define HORIZONTAL (-1.0E+40)
-#define TOLERANCE (1.0e-20)
+#define HORIZONTAL -1.0e40L//-10000000000000000000000000000000000000000L //(-1.0E+40)L
+#define TOLERANCE 0.00000000000000000001L//(1.0e-20)L
 #define NEAR_ZERO(val) (((val) > -TOLERANCE) && ((val) < TOLERANCE))
 
 struct TEdge {
