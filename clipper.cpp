@@ -38,7 +38,7 @@
 *                                                                              *
 *******************************************************************************/
 
-#include "clipper.hpp"
+#include "cpp/clipper.hpp"
 #include <cmath>
 #include <vector>
 #include <algorithm>
@@ -1062,6 +1062,7 @@ bool ClipperBase::AddPath(const Path &pg, PolyType PolyTyp, bool Closed)
 
   bool IsFlat = true;
   //1. Basic (first) edge initialization ...
+  #ifndef no_Exceptions
   try
   {
     edges[1].Curr = pg[1];
@@ -1080,6 +1081,19 @@ bool ClipperBase::AddPath(const Path &pg, PolyType PolyTyp, bool Closed)
     delete [] edges;
     throw; //range test fails
   }
+  #else
+  edges[1].Curr = pg[1];
+  RangeTest(pg[0], m_UseFullRange);
+  RangeTest(pg[highI], m_UseFullRange);
+  InitEdge(&edges[0], &edges[1], &edges[highI], pg[0]);
+  InitEdge(&edges[highI], &edges[0], &edges[highI-1], pg[highI]);
+  for (int i = highI - 1; i >= 1; --i)
+  {
+    RangeTest(pg[i], m_UseFullRange);
+    InitEdge(&edges[i], &edges[i+1], &edges[i-1], pg[i]);
+  }
+  #endif
+
   TEdge *eStart = &edges[0];
 
   //2. Remove duplicate vertices, and (when closed) collinear edges ...
@@ -1560,6 +1574,7 @@ void Clipper::FixHoleLinkage(OutRec &outrec)
 bool Clipper::ExecuteInternal()
 {
   bool succeeded = true;
+  #ifndef no_Exceptions
   try {
     Reset();
     m_Maxima = MaximaList();
@@ -1587,7 +1602,29 @@ bool Clipper::ExecuteInternal()
   {
     succeeded = false;
   }
+  #else
+  Reset();
+  m_Maxima = MaximaList();
+  m_SortedEdges = 0;
 
+  succeeded = true;
+  cInt botY, topY;
+  if (!PopScanbeam(botY)) return false;
+  InsertLocalMinimaIntoAEL(botY);
+  while (PopScanbeam(topY) || LocalMinimaPending())
+  {
+    ProcessHorizontals();
+	ClearGhostJoins();
+    if (!ProcessIntersections(topY))
+    {
+      succeeded = false;
+      break;
+    }
+    ProcessEdgesAtTopOfScanbeam(topY);
+    botY = topY;
+    InsertLocalMinimaIntoAEL(botY);
+  }
+  #endif
   if (succeeded)
   {
     //fix orientations ...
@@ -2827,6 +2864,7 @@ void Clipper::ProcessHorizontal(TEdge *horzEdge)
 bool Clipper::ProcessIntersections(const cInt topY)
 {
   if( !m_ActiveEdges ) return true;
+  #ifndef no_Exceptions
   try {
     BuildIntersectList(topY);
     size_t IlSize = m_IntersectList.size();
@@ -2840,6 +2878,13 @@ bool Clipper::ProcessIntersections(const cInt topY)
     DisposeIntersectNodes();
     throw clipperException("ProcessIntersections error");
   }
+  #else
+  BuildIntersectList(topY);
+  size_t IlSize = m_IntersectList.size();
+  if (IlSize == 0) return true;
+  if (IlSize == 1 || FixupIntersectionOrder()) ProcessIntersectList();
+  else return false;
+  #endif
   m_SortedEdges = 0;
   return true;
 }
@@ -4329,10 +4374,10 @@ double DistanceFromLineSqrd(
   const IntPoint& pt, const IntPoint& ln1, const IntPoint& ln2)
 {
   //The equation of a line in general form (Ax + By + C = 0)
-  //given 2 points (x¹,y¹) & (x²,y²) is ...
-  //(y¹ - y²)x + (x² - x¹)y + (y² - y¹)x¹ - (x² - x¹)y¹ = 0
-  //A = (y¹ - y²); B = (x² - x¹); C = (y² - y¹)x¹ - (x² - x¹)y¹
-  //perpendicular distance of point (x³,y³) = (Ax³ + By³ + C)/Sqrt(A² + B²)
+  //given 2 points (xï¿½,yï¿½) & (xï¿½,yï¿½) is ...
+  //(yï¿½ - yï¿½)x + (xï¿½ - xï¿½)y + (yï¿½ - yï¿½)xï¿½ - (xï¿½ - xï¿½)yï¿½ = 0
+  //A = (yï¿½ - yï¿½); B = (xï¿½ - xï¿½); C = (yï¿½ - yï¿½)xï¿½ - (xï¿½ - xï¿½)yï¿½
+  //perpendicular distance of point (xï¿½,yï¿½) = (Axï¿½ + Byï¿½ + C)/Sqrt(Aï¿½ + Bï¿½)
   //see http://en.wikipedia.org/wiki/Perpendicular_distance
   double A = double(ln1.Y - ln2.Y);
   double B = double(ln2.X - ln1.X);
