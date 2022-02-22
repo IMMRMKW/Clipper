@@ -50,8 +50,8 @@
 
 namespace ClipperLib {
 
-static double const pi = 3.141592653589793238;
-static double const two_pi = pi *2;
+static double const pi = 3.141592653589793238L;
+static double const two_pi = pi *2.0L;
 static double const def_arc_tolerance = 0.25;
 
 enum Direction { dRightToLeft, dLeftToRight };
@@ -898,7 +898,11 @@ void RangeTest(const IntPoint& Pt, bool& useFullRange)
   if (useFullRange)
   {
     if (Pt.X > hiRange || Pt.Y > hiRange || -Pt.X > hiRange || -Pt.Y > hiRange) 
+      #ifndef no_Exceptions 
       throw clipperException("Coordinate outside allowed range");
+      #else
+      Serial.println("Coordinate outside allowed range");
+      #endif
   }
   else if (Pt.X > loRange|| Pt.Y > loRange || -Pt.X > loRange || -Pt.Y > loRange) 
   {
@@ -1046,10 +1050,18 @@ bool ClipperBase::AddPath(const Path &pg, PolyType PolyTyp, bool Closed)
 {
 #ifdef use_lines
   if (!Closed && PolyTyp == ptClip)
+    #ifndef no_Exceptions
     throw clipperException("AddPath: Open paths must be subject.");
+    #else
+    Serial.println("AddPath: Open paths must be subject.");
+    #endif
 #else
   if (!Closed)
+    #ifndef no_Exceptions
     throw clipperException("AddPath: Open paths have been disabled.");
+    #else
+    Serial.println("AddPath: Open paths have been disabled.");
+    #endif
 #endif
 
   int highI = (int)pg.size() -1;
@@ -1456,7 +1468,11 @@ void ClipperBase::SwapPositionsInAEL(TEdge *Edge1, TEdge *Edge2)
 void ClipperBase::UpdateEdgeIntoAEL(TEdge *&e)
 {
   if (!e->NextInLML) 
+    #ifndef no_Exceptions
     throw clipperException("UpdateEdgeIntoAEL: invalid call");
+    #else
+    Serial.println("UpdateEdgeIntoAEL: invalid call");
+    #endif
 
   e->NextInLML->OutIdx = e->OutIdx;
   TEdge* AelPrev = e->PrevInAEL;
@@ -1524,7 +1540,11 @@ bool Clipper::Execute(ClipType clipType, Paths &solution,
 {
   if( m_ExecuteLocked ) return false;
   if (m_HasOpenPaths)
+    #ifndef no_Exceptions
     throw clipperException("Error: PolyTree struct is needed for open path clipping.");
+    #else
+    Serial.println("Error: PolyTree struct is needed for open path clipping.");
+    #endif
   m_ExecuteLocked = true;
   solution.resize(0);
   m_SubjFillType = subjFillType;
@@ -3047,7 +3067,14 @@ void Clipper::DoMaxima(TEdge *e)
     DeleteFromAEL(eMaxPair);
   } 
 #endif
-  else throw clipperException("DoMaxima error");
+  else
+  {
+    #ifndef no_Exceptions
+    throw clipperException("DoMaxima error");
+    #else
+    Serial.println("DoMaxima error");
+    #endif
+  } 
 }
 //------------------------------------------------------------------------------
 

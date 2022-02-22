@@ -58,7 +58,9 @@
 #include <ostream>
 #include <functional>
 #include <queue>
-
+//Added by M.K. Welleweerd
+#include <Arduino.h>
+#include <numeric>
 namespace ClipperLib {
 
 enum ClipType { ctIntersection, ctUnion, ctDifference, ctXor };
@@ -100,7 +102,24 @@ struct IntPoint {
   {
     return a.X != b.X  || a.Y != b.Y; 
   }
+
+  //M.K. Welleweerd added these:
+  IntPoint operator - (const IntPoint &p)  const { return IntPoint(X - p.X, Y - p.Y); }
+  IntPoint operator + (const IntPoint &p)  const { return IntPoint(X + p.X, Y + p.Y); }
+  bool operator < (const IntPoint &p ) const {return  X < p.X || (X == p.X && Y < p.Y); }
+  template <typename T >
+  IntPoint operator / (const T p)  const { return IntPoint(round(X / p), round(Y / p)); }
+  int norm(){ return sqrt( X * X + Y * Y); }
+  float theta(){return atan2f( Y, X);}
 };
+
+//M.K. Welleweerd added these:
+//Commutative operator overloading: 
+//https://stackoverflow.com/questions/34106558/c-simple-operator-overloading-for-both-directions
+template <typename T>
+IntPoint operator*(const IntPoint& p, const T c){return IntPoint(round(c*p.X), round(c*p.Y));}
+template <typename T>
+IntPoint operator*(const T c, const IntPoint& p){return p*c;}
 //------------------------------------------------------------------------------
 
 typedef std::vector< IntPoint > Path;
